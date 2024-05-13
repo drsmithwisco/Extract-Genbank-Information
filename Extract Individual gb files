@@ -1,0 +1,36 @@
+import pandas as pd
+from Bio import Entrez
+from Bio import SeqIO
+
+def search_nucleotide(refseq_accession):
+    Entrez.email = "drsmith28@wisc.edu"  # Provide your email address
+    handle = Entrez.esearch(db="nucleotide", term=refseq_accession, idtype="acc")
+    record = Entrez.read(handle)
+    handle.close()
+    if record['Count'] and int(record['Count']) > 0:
+        nucleotide_id = record['IdList'][0]
+        return nucleotide_id
+    else:
+        return None
+
+def download_genbank(nucleotide_id, refseq_accession):
+    Entrez.email = "drsmith28@wisc.edu"  # Provide your email address
+    handle = Entrez.efetch(db="nucleotide", id=nucleotide_id, rettype="gb", retmode="text", view="text", report="text")
+    genbank_data = handle.read()
+    handle.close()
+    filename = refseq_accession + ".gb"
+    with open(filename, "w") as f:
+        f.write(genbank_data)
+    return filename
+
+# Read Excel input file
+excel_file = "ipg_results.xlsx"  # Provide the path to your input Excel file
+df = pd.read_excel(excel_file)
+
+# Iterate over each RefSeq accession, search and download GenBank file
+for refseq_accession in df['RefSeq Accessions']:
+    nucleotide_id = search_nucleotide(refseq_accession)
+    if nucleotide_id:
+        download_genbank(nucleotide_id, refseq_accession)
+
+print("GenBank files extracted and saved.")
